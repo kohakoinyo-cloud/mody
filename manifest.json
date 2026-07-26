@@ -1,0 +1,10 @@
+{
+  "short_name": "الميزانية",
+  "name": "تطبيق الميزانية الذكية",
+  "icons": [],
+  "start_url": ".",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait"
+}
