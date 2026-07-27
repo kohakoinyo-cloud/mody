@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <link rel="manifest" href="./manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <title>تراكم - إدارة المبيعات والمخزون</title>
+  
+  <!-- خط Tajawal العريض والواضح -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- مكتبة الأيقونات Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="logo-icon">
+          <i data-lucide="layers"></i>
+        </div>
+        <div class="brand-text">
+          <h1>تراكم</h1>
+          <span class="system-status"><span class="pulse-dot"></span> متصل محلياً</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="installAppBtn" class="btn btn-pill btn-primary-glow" style="display: none;">
+          <i data-lucide="download"></i>
+          <span>تثبيت التطبيق</span>
+        </button>
+        <button onclick="printDailyReport()" class="btn btn-icon-only" title="طباعة التقرير">
+          <i data-lucide="printer"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-wrapper">
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('salesTab', this)">
+        <i data-lucide="shopping-cart"></i>
+        <span>المبيعات</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('dashboardTab', this)">
+        <i data-lucide="layout-dashboard"></i>
+        <span>الإحصائيات</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('debtsTab', this)">
+        <i data-lucide="users"></i>
+        <span>الديون</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('stockTab', this)">
+        <i data-lucide="package"></i>
+        <span>المخزن</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('settingsTab', this)">
+        <i data-lucide="sliders"></i>
+        <span>الإعدادات</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Main Workspace Container -->
+  <main class="main-container">
+
+    <!-- 1. شاشة المبيعات السريعة -->
+    <section id="salesTab" class="tab-content active">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="zap" class="text-amber"></i>
+            <h2>عملية بيع جديدة</h2>
+          </div>
+          <button type="button" onclick="toggleScanner()" class="btn btn-subtle">
+            <i data-lucide="camera"></i>
+            <span>ماسح الباركود</span>
+          </button>
+        </div>
+
+        <div id="scannerContainer" class="scanner-wrapper" style="display: none;">
+          <div id="reader"></div>
+        </div>
+
+        <form id="saleForm" class="modern-form">
+          <div class="form-grid">
+            <div class="form-group highlight-field">
+              <label><i data-lucide="scan-barcode"></i> رمز الباركود</label>
+              <input type="text" id="saleBarcode" placeholder="اضغط هنا أو امسح الباركود" autofocus oninput="findProductByBarcode(this.value)">
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="box"></i> اسم المادة</label>
+              <input type="text" id="saleItemName" placeholder="اختر المادة من القائمة" list="stockDatalist" required oninput="autoFillPrice()">
+              <datalist id="stockDatalist"></datalist>
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="hash"></i> الكمية</label>
+              <input type="number" id="saleQty" min="1" value="1" required oninput="autoFillPrice()">
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="tag"></i> سعر البيع الكلي (د.ع)</label>
+              <input type="number" id="salePrice" placeholder="0" required>
+            </div>
+
+            <div class="form-group">
+              <label><i data-lucide="coins"></i> كلفة الشراء الكلية (د.ع)</label>
+              <input type="number" id="costPrice" placeholder="0" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label><i data-lucide="wallet"></i> طريقة الدفع</label>
+              <div class="segmented-control">
+                <input type="radio" name="saleTypeRadio" id="typeCash" value="cash" checked onchange="handleTypeChange('cash')">
+                <label for="typeCash"><i data-lucide="banknote"></i> نقداً (كاش)</label>
+                
+                <input type="radio" name="saleTypeRadio" id="typeDebt" value="debt" onchange="handleTypeChange('debt')">
+                <label for="typeDebt"><i data-lucide="user-minus"></i> تسجـيل بالآجـل (دين)</label>
+              </div>
+              <input type="hidden" id="saleType" value="cash">
+            </div>
+
+            <div class="form-group full-width" id="customerSelectGroup" style="display: none;">
+              <label><i data-lucide="user"></i> اسم الزبون</label>
+              <input type="text" id="saleCustomerName" list="customersDatalist" placeholder="اكتب أو اختر اسم الزبون...">
+              <datalist id="customersDatalist"></datalist>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg full-width">
+            <i data-lucide="check-circle-2"></i>
+            <span>إتمام العملية وتسجيل البيع</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- قائمة المبيعات اليومية -->
+      <div class="glass-card mt-24">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="history"></i>
+            <h3>المبيعات المسجلة</h3>
+          </div>
+          <input type="date" id="filterDate" onchange="renderSales()" class="custom-date-picker">
+        </div>
+        <ul id="salesList" class="styled-list"></ul>
+      </div>
+    </section>
+
+    <!-- 2. الشاشة الرئيسية والإحصائيات -->
+    <section id="dashboardTab" class="tab-content">
+      <div class="metrics-grid">
+        <div class="metric-card debt">
+          <div class="metric-header">
+            <span>مجموع الديون</span>
+            <i data-lucide="credit-card"></i>
+          </div>
+          <h3 id="totalDebts">0 د.ع</h3>
+        </div>
+
+        <div class="metric-card sales">
+          <div class="metric-header">
+            <span>مبيعات اليوم</span>
+            <i data-lucide="trending-up"></i>
+          </div>
+          <h3 id="totalSales">0 د.ع</h3>
+        </div>
+
+        <div class="metric-card profit">
+          <div class="metric-header">
+            <span>صافي الأرباح</span>
+            <i data-lucide="sparkles"></i>
+          </div>
+          <h3 id="totalProfit">0 د.ع</h3>
+        </div>
+
+        <div class="metric-card stock">
+          <div class="metric-header">
+            <span>قيمة المخزون</span>
+            <i data-lucide="archive"></i>
+          </div>
+          <h3 id="inventoryValue">0 د.ع</h3>
+        </div>
+      </div>
+
+      <div id="lowStockAlert" class="alert-banner" style="display: none;">
+        <i data-lucide="alert-triangle"></i>
+        <div class="alert-content">
+          <strong>تنبيه المواد القريبة من النفاد:</strong>
+          <ul id="lowStockList"></ul>
+        </div>
+      </div>
+
+      <div class="glass-card mt-24">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="flame" class="text-amber"></i>
+            <h3>المواد الأكثر طلباً (الأعلى مبيعاً)</h3>
+          </div>
+        </div>
+        <ul id="topSellingList" class="styled-list"></ul>
+      </div>
+    </section>
+
+    <!-- 3. إدارة الديون والزبائن -->
+    <section id="debtsTab" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="user-plus"></i>
+            <h2>إضافة دين مباشر</h2>
+          </div>
+        </div>
+        <form id="debtForm" class="modern-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>اسم الزبون</label>
+              <input type="text" id="customerName" list="customersDatalist" placeholder="اكتب الاسم هنا" required>
+            </div>
+            <div class="form-group">
+              <label>المبلغ (د.ع)</label>
+              <input type="number" id="debtAmount" placeholder="0" required>
+            </div>
+            <div class="form-group full-width">
+              <label>التفاصيل / ملاحظات</label>
+              <input type="text" id="debtDetails" placeholder="مثال: متبقي حساب سكتون">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary full-width">
+            <i data-lucide="save"></i>
+            <span>حفظ الدين</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="glass-card mt-24">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="users"></i>
+            <h3>سجل حسابات الزبائن</h3>
+          </div>
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="searchDebtInput" placeholder="بحث عن زبون..." oninput="renderDebts()">
+          </div>
+        </div>
+        <ul id="debtList" class="styled-list"></ul>
+      </div>
+    </section>
+
+    <!-- 4. إدارة البضائع والمخزن -->
+    <section id="stockTab" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="package-plus"></i>
+            <h2 id="stockFormTitle">إضافة / تعديل مادة في المخزن</h2>
+          </div>
+        </div>
+        <form id="stockForm" class="modern-form">
+          <input type="hidden" id="stockEditId" value="">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>رمز الباركود</label>
+              <input type="text" id="itemBarcode" placeholder="امسح أو اكتب الباركود">
+            </div>
+            <div class="form-group">
+              <label>اسم المادة</label>
+              <input type="text" id="itemName" placeholder="اسم المنتج" required>
+            </div>
+            <div class="form-group">
+              <label>الكمية المتوفرة</label>
+              <input type="number" id="itemQty" placeholder="0" required>
+            </div>
+            <div class="form-group">
+              <label>سعر الشراء (الكلفة)</label>
+              <input type="number" id="buyPrice" placeholder="0" required>
+            </div>
+            <div class="form-group full-width">
+              <label>سعر البيع المفرد</label>
+              <input type="number" id="sellPrice" placeholder="0" required>
+            </div>
+          </div>
+          <div class="button-group">
+            <button type="submit" id="stockSubmitBtn" class="btn btn-primary full-width">
+              <i data-lucide="check"></i>
+              <span>حفظ المادة</span>
+            </button>
+            <button type="button" id="cancelEditBtn" onclick="resetStockForm()" class="btn btn-ghost full-width" style="display:none;">
+              <span>إلغاء التعديل</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="glass-card mt-24">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="boxes"></i>
+            <h3>جرد مواد المخزن</h3>
+          </div>
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="searchStockInput" placeholder="بحث باسم أو باركود..." oninput="renderStock()">
+          </div>
+        </div>
+        <ul id="stockList" class="styled-list"></ul>
+      </div>
+    </section>
+
+    <!-- 5. صيانة وتصفير النظام -->
+    <section id="settingsTab" class="tab-content">
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="header-title">
+            <i data-lucide="shield-check"></i>
+            <h2>النسخ الاحتياطي والصيانة</h2>
+          </div>
+        </div>
+        
+        <div class="settings-actions">
+          <button onclick="exportBackup()" class="btn btn-outline full-width">
+            <i data-lucide="download-cloud"></i>
+            <span>تصدير نسخة احتياطية (.json)</span>
+          </button>
+          
+          <label class="btn btn-outline full-width custom-file-btn">
+            <i data-lucide="upload-cloud"></i>
+            <span>استرجاع نسخة احتياطية</span>
+            <input type="file" id="restoreFile" accept=".json" onchange="importBackup(event)" style="display: none;">
+          </label>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="danger-zone">
+          <div class="danger-header">
+            <i data-lucide="alert-octagon"></i>
+            <h3>منطقة الخطر وإعادة الضبط</h3>
+          </div>
+          <p>تنبيه: هذه الإجراءات نهائية ولا يمكن التراجع عنها بعد التنفيذ.</p>
+          <div class="danger-buttons">
+            <button onclick="resetStatsData()" class="btn btn-danger-soft">
+              <i data-lucide="rotate-ccw"></i>
+              <span>تصفير المبيعات والأرباح فقط</span>
+            </button>
+            <button onclick="resetSystemData()" class="btn btn-danger">
+              <i data-lucide="trash-2"></i>
+              <span>إعادة ضبط وتصفير النظام بالكامل</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Mobile Navigation Bar -->
+  <div class="mobile-nav-bar">
+    <button class="mobile-nav-btn active" onclick="switchTab('salesTab', this)">
+      <i data-lucide="shopping-cart"></i>
+      <span>المبيعات</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchTab('dashboardTab', this)">
+      <i data-lucide="layout-dashboard"></i>
+      <span>الرئيسية</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchTab('debtsTab', this)">
+      <i data-lucide="users"></i>
+      <span>الديون</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchTab('stockTab', this)">
+      <i data-lucide="package"></i>
+      <span>المخزن</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchTab('settingsTab', this)">
+      <i data-lucide="sliders"></i>
+      <span>الإعدادات</span>
+    </button>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // تفعيل أيقونات Lucide
+    lucide.createIcons();
+
+    // التعامل مع الأزرار المقسمة (Segmented Control)
+    function handleTypeChange(val) {
+      document.getElementById('saleType').value = val;
+      toggleCustomerInput();
+    }
+  </script>
+</body>
+</html>
