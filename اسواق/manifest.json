@@ -1,0 +1,67 @@
+{
+  "short_name": "اسواق البركة",
+  "name": "اسواق البركة - إدارة المبيعات والمخزن",
+  "description": "تطبيق تراكم لإدارة المبيعات والمخزون والديون اليومية بسهولة وسرعة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "categories": ["shopping", "business", "utilities"],
+  "icons": [
+    {
+      "src": "./android/launchericon-48x48",
+      "type": "image/png",
+      "sizes": "48x48"
+    },
+    {
+      "src": "./android/launchericon-72x72",
+      "type": "image/png",
+      "sizes": "72x72"
+    },
+    {
+      "src": "./android/launchericon-96x96",
+      "type": "image/png",
+      "sizes": "96x96"
+    },
+    {
+      "src": "./android/launchericon-144x144",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
+      "src": "./android/launchericon-192x192",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./android/launchericon-512x512",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "./android/launchericon-512x512",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./android/launchericon-512x512",
+      "type": "image/png",
+      "sizes": "512x512",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "./android/launchericon-512x512",
+      "type": "image/png",
+      "sizes": "512x512",
+      "form_factor": "wide"
+    }
+  ]
+}
